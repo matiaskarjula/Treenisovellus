@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treeniseuranta</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    label, input, select, button { margin: 5px 0; display: block; }
+    canvas { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>Treeniseuranta</h1>
+
+  <label for="date">Päivämäärä:</label>
+  <input type="date" id="date">
+
+  <label for="exercise">Liike:</label>
+  <input type="text" id="exercise" placeholder="esim. penkki">
+
+  <label for="weight">Paino (kg):</label>
+  <input type="number" id="weight">
+
+  <label for="reps">Toistot:</label>
+  <input type="number" id="reps">
+
+  <label for="rir">RIR:</label>
+  <input type="number" id="rir">
+
+  <button onclick="saveEntry()">Tallenna</button>
+
+  <label for="chartExercise">Valitse liike käyrään:</label>
+  <select id="chartExercise"></select>
+  <button onclick="drawChart()">Piirrä kehityskäyrä</button>
+
+  <canvas id="chartCanvas"></canvas>
+
+<h2>Oletustreeniohjelma</h2>
+<p>Suositeltu 4-jakoinen ohjelma (hypertrofia + voima):</p>
+<pre>
+Työntävät (penkkifokus):
+- Penkkipunnerrus tangolla         4x6
+- Vinopenkki käsipainoilla         3x8–10
+- Pystypunnerrus käsipainoilla     3x8
+- Dippi (lisäpainolla)             3x8
+- Ranskalainen punnerrus           3x10
+- Sivuviparit taljassa             3x12–15
+
+Vetävät (hauisfokus):
+- Leuanveto / Ylätalja             3x8
+- Alatalja                         3x8–10
+- Suorinjaloin mave                3x8
+- Takaolkapäät taljassa            3x12
+- Hauiskääntö tangolla             3x8
+- Hauiskääntö taljassa             3x10
+
+Jalat (kyykkypainotus):
+- Takakyykky                       4x6
+- Etureisilaite                    3x10
+- Takareidet laitteessa           3x10
+- Pohkeet smithissä               3x12
+- Vatsalihaskone                  3x15
+
+Olkapäät + Kädet (täsmäpäivä):
+- Pystypunnerrus laitteessa       3x10
+- Sivuviparit käsipainoilla        3x15
+- Etuviparit levypainolla          2x15
+- Ojentajapunnerrus taljassa       3x12
+- Hauiskääntö ristitaljassa        3x12
+- Dippi kehonpainolla              3x failure
+</pre>
+
+
+  <script>
+    function saveEntry() {
+      const date = document.getElementById('date').value;
+      const exercise = document.getElementById('exercise').value.toLowerCase();
+      const weight = parseFloat(document.getElementById('weight').value);
+      const reps = parseInt(document.getElementById('reps').value);
+      const rir = parseInt(document.getElementById('rir').value);
+      if (!date || !exercise || isNaN(weight) || isNaN(reps)) return;
+
+      const entry = { weight, reps, rir };
+      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
+      if (!data[date]) data[date] = {};
+      if (!data[date][exercise]) data[date][exercise] = [];
+      data[date][exercise].push(entry);
+      localStorage.setItem('treenidata', JSON.stringify(data));
+
+      updateDropdown();
+      alert('Tallennettu!');
+    }
+
+    function updateDropdown() {
+      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
+      const exerciseSet = new Set();
+      for (const date in data) {
+        for (const ex in data[date]) {
+          exerciseSet.add(ex);
+        }
+      }
+      const select = document.getElementById('chartExercise');
+      select.innerHTML = '';
+      for (const ex of exerciseSet) {
+        const option = document.createElement('option');
+        option.value = ex;
+        option.textContent = ex;
+        select.appendChild(option);
+      }
+    }
+
+    function drawChart() {
+      const selected = document.getElementById('chartExercise').value;
+      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
+      const dates = [], values = [];
+
+      const dateKeys = Object.keys(data).sort();
+      for (const date of dateKeys) {
+        if (data[date][selected]) {
+          const entries = data[date][selected];
+          const volume = entries.reduce((sum, e) => sum + e.weight * e.reps, 0);
+          let oneRM = Math.max(...entries.map(e => e.weight * (1 + e.reps / 30)));
+          if (selected === "penkki" || selected === "kyykky") {
+            values.push({ label: date, value: oneRM });
+          } else {
+            values.push({ label: date, value: volume });
+          }
+          dates.push(date);
+        }
+      }
+
+      const ctx = document.getElementById('chartCanvas').getContext('2d');
+      if (window.myChart) window.myChart.destroy();
+      window.myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: values.map(v => v.label),
+          datasets: [{
+            label: selected + (selected === "penkki" || selected === "kyykky" ? ' (1RM)' : ' (volyymi)'),
+            data: values.map(v => v.value),
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: false
+            }
+          }
+        }
+      });
+    }
+
+    updateDropdown();
+  </script>
+</body>
+</html>
