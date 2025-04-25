@@ -132,6 +132,8 @@
 
       document.getElementById('exercise-section').classList.remove('hidden');
       startTimer();
+      document.getElementById('save-btn')?.classList.add('hidden');
+      document.getElementById('stop-btn')?.classList.add('hidden');
     }
 
     function generateSetInputs(ex, count) {
@@ -316,16 +318,21 @@
       }, 1000);
     }
 
-
     function stopWorkout() {
       clearInterval(timerInterval);
+      timerInterval = null;
+      startTime = null;
+      pausedAt = null;
+      totalPausedTime = 0;
+    
       document.getElementById('timer').classList.add('hidden');
       document.getElementById('exercise-section')?.classList.add('hidden');
-      document.getElementById('program-selection')?.classList.add('hidden');  // 🔹 tämä uusi
+      document.getElementById('program-selection')?.classList.add('hidden');
       document.getElementById('pause-screen')?.classList.add('hidden');
       document.getElementById('short-workout-choice')?.classList.add('hidden');
       document.getElementById('final-message').classList.remove('hidden');
     }
+    
   </script>
 </body>
 </html>
