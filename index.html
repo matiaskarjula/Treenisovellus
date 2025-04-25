@@ -18,7 +18,7 @@
 </head>
 <body>
     <div id="main-menu">
-      <h1>Teit hyvin, kun tulit treenille ystävä.</h1>
+      <h1>Teit hyvin, kun tulit treenille ystävänsä.</h1>
       <label for="user">Valitse käyttäjä:</label>
       <select id="user">
         <option value="">-- Valitse --</option>
@@ -35,6 +35,19 @@
       <option value="">-- Valitse --</option>
     </select>
   </div>
+
+  <div id="pause-screen" class="hidden">
+    <h2>Treeni keskeytetty</h2>
+    <p>Treenin kesto: <span id="paused-duration">00:00:00</span></p>
+    <button onclick="resumeWorkout()">Jatka treeniä</button>
+    <button onclick="confirmEndWorkout()">Lopeta treeni</button>
+  </div>
+
+  <div id="short-workout-choice" class="hidden">
+    <p>Treeni oli alle 15 minuuttia. Haluatko silti tallentaa sen?</p>
+    <button onclick="finalizeWorkout(true)">Tallenna treeni</button>
+    <button onclick="finalizeWorkout(false)">Poista treeni</button>
+  </div>
   
   <div id="history-view" class="hidden">
     <h2>Treenihistoria</h2>
@@ -49,6 +62,7 @@
     <div id="exercise-entries"></div>
     <button onclick="saveWorkout()">Tallenna treeni</button>
     <button onclick="stopWorkout()">Lopeta treeni</button>
+    <button onclick="pauseWorkout()">Keskeytä treeni</button>
   </div>
 
   <div id="final-message" class="hidden">
@@ -234,6 +248,45 @@
       alert('Treenit tallennettu!');
     }
 
+    function pauseWorkout() {
+      clearInterval(timerInterval);
+      document.getElementById('exercise-section').classList.add('hidden');
+      document.getElementById('pause-screen').classList.remove('hidden');
+      updatePausedTime();
+    }
+
+    function resumeWorkout() {
+      document.getElementById('pause-screen').classList.add('hidden');
+      document.getElementById('exercise-section').classList.remove('hidden');
+      startTimer();
+    }
+
+    function confirmEndWorkout() {
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= 15 * 60 * 1000) {
+        finalizeWorkout(true);
+      } else {
+        document.getElementById('pause-screen').classList.add('hidden');
+        document.getElementById('short-workout-choice').classList.remove('hidden');
+      }
+    }
+
+    function finalizeWorkout(save) {
+      document.getElementById('short-workout-choice').classList.add('hidden');
+      if (save) {
+        saveWorkout(); // tallennetaan normaalisti
+      }
+      stopWorkout(); // näyttää mietelauseen ja siirtyy loppunäkymään
+    }
+
+    function updatePausedTime() {
+      const elapsed = Date.now() - startTime;
+      const h = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+      document.getElementById('paused-duration').textContent = `${h}:${m}:${s}`;
+    }
+
     function startTimer() {
       const timer = document.getElementById('timer');
       timer.classList.remove('hidden');
@@ -251,7 +304,9 @@
     function stopWorkout() {
       clearInterval(timerInterval);
       document.getElementById('timer').classList.add('hidden');
-      document.getElementById('exercise-section').classList.add('hidden');
+      document.getElementById('exercise-section')?.classList.add('hidden');
+      document.getElementById('pause-screen')?.classList.add('hidden');
+      document.getElementById('short-workout-choice')?.classList.add('hidden');
       document.getElementById('final-message').classList.remove('hidden');
     }
   </script>
