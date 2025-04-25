@@ -256,6 +256,7 @@
     }
 
     function pauseWorkout() {
+      document.getElementById('timer')?.classList.add('hidden');
       clearInterval(timerInterval);
       pausedAt = Date.now();
       document.getElementById('exercise-section').classList.add('hidden');
@@ -274,6 +275,7 @@
       document.getElementById('exercise-section').classList.remove('hidden');
       document.getElementById('save-btn')?.classList.add('hidden');
       document.getElementById('stop-btn')?.classList.add('hidden');
+      document.getElementById('timer')?.classList.remove('hidden');
       startTimer();
     }
 
