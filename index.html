@@ -142,9 +142,23 @@
         alert("Valitse käyttäjä ensin!");
         return;
       }
-      loadPrograms(); // täyttää ohjelmalistan
+    
+      // Täytetään ohjelmavalinta
+      const programSelect = document.getElementById('program');
+      programSelect.innerHTML = '<option value="">-- Valitse --</option>';
+      if (programs[user]) {
+        for (const key in programs[user]) {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = key;
+          programSelect.appendChild(option);
+        }
+      }
+    
+      // Näytä seuraava näkymä
       showSection('program-selection');
     }
+
 
 
     function loadHistory() {
