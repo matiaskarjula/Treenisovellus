@@ -17,20 +17,29 @@
   </style>
 </head>
 <body>
-  <h1>Teit hyvin, kun tulit treenille ystäväni.</h1>
-
-  <label for="user">Valitse käyttäjä:</label>
-  <select id="user" onchange="loadPrograms()">
-    <option value="">-- Valitse --</option>
-    <option value="Matias">Matias</option>
-    <option value="Eeva">Eeva</option>
-  </select>
-
-  <div id="program-section" class="hidden">
+    <div id="main-menu">
+      <h1>Teit hyvin, kun tulit treenille ystävä.</h1>
+      <label for="user">Valitse käyttäjä:</label>
+      <select id="user">
+        <option value="">-- Valitse --</option>
+        <option value="Matias">Matias</option>
+        <option value="Eeva">Eeva</option>
+      </select>
+      <button onclick="goToProgramSelection()">Aloita treeni</button>
+      <button onclick="showSection('history-view')">Katso treenihistoriaa</button>
+    </div>
+  
+  <div id="program-selection" class="hidden">
     <label for="program">Valitse treeni:</label>
     <select id="program" onchange="showExercises()">
       <option value="">-- Valitse --</option>
     </select>
+  </div>
+  
+  <div id="history-view" class="hidden">
+    <h2>Treenihistoria</h2>
+    <div id="history-list"></div>
+    <button onclick="showSection('main-menu')">Takaisin alkuun</button>
   </div>
 
   <div id="timer" class="hidden">Treenin kesto: <span id="elapsed">00:00:00</span></div>
@@ -120,6 +129,45 @@
       }
       return html;
     }
+
+    function showSection(id) {
+      const sections = ['main-menu', 'program-selection', 'exercise-section', 'history-view', 'final-message'];
+      sections.forEach(sec => document.getElementById(sec)?.classList.add('hidden'));
+      document.getElementById(id)?.classList.remove('hidden');
+    }
+    
+    function goToProgramSelection() {
+      const user = document.getElementById('user').value;
+      if (!user) {
+        alert("Valitse käyttäjä ensin!");
+        return;
+      }
+      loadPrograms(); // täyttää ohjelmalistan
+      showSection('program-selection');
+    }
+
+
+    function loadHistory() {
+      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
+      const container = document.getElementById('history-list');
+      container.innerHTML = '';
+    
+      const dates = Object.keys(data).sort().reverse();
+      dates.forEach(date => {
+        const entry = data[date];
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${date}</strong><ul>` +
+          Object.keys(entry).filter(k => k !== '_meta').map(ex =>
+            `<li>${ex}: ${entry[ex].map(s => `${s.weight}kg × ${s.reps}`).join(', ')}</li>`
+          ).join('') + `</ul>`;
+        container.appendChild(div);
+      });
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadHistory();
+    });
+
     
     function addSet(ex) {
       const container = document.getElementById(`${ex}-sets`);
