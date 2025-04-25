@@ -27,6 +27,7 @@
       </select>
       <button onclick="goToProgramSelection()">Aloita treeni</button>
       <button onclick="showSection('history-view')">Katso treenihistoriaa</button>
+      <button id="continue-btn" class="hidden" onclick="continueWorkout()">Jatka treeniä</button>
     </div>
   
   <div id="program-selection" class="hidden">
@@ -109,7 +110,7 @@
       }
     }
 
-    function showExercises() {
+    function showExercises(callback) {
       const user = document.getElementById('user').value;
       const program = document.getElementById('program').value;
       const exercises = programs[user][program];
@@ -134,21 +135,20 @@
       startTimer();
       document.getElementById('save-btn')?.classList.add('hidden');
       document.getElementById('stop-btn')?.classList.add('hidden');
+      if (typeof callback === 'function') callback();
     }
 
     function generateSetInputs(ex, count) {
       let html = '';
       for (let i = 0; i < count; i++) {
-        html += `
-          <div class="set-row">
-            <strong>Sarja ${i + 1}</strong>
-            <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
-            <label>Toistot: <input type="number" name="${ex}-reps"></label>
-            <button type="button" onclick="removeSet(this)">Poista</button>
-          </div>`;
+        html += `<div class="set-row">
+          <label>Paino (kg): <input type="number" name="${ex}-weight" oninput="saveSessionProgress()"></label>
+          <label>Toistot: <input type="number" name="${ex}-reps" oninput="saveSessionProgress()"></label>
+        </div>`;
       }
       return html;
     }
+
 
     function showSection(id) {
       const sections = ['main-menu', 'program-selection', 'exercise-section', 'history-view', 'final-message'];
@@ -180,6 +180,34 @@
     }
 
 
+    function saveSessionProgress() {
+      const user = document.getElementById('user').value;
+      const program = document.getElementById('program').value;
+      const exercises = programs[user][program];
+      const sessionData = {};
+    
+      exercises.forEach(ex => {
+        const weightInputs = document.getElementsByName(`${ex}-weight`);
+        const repInputs = document.getElementsByName(`${ex}-reps`);
+        sessionData[ex] = [];
+        for (let i = 0; i < weightInputs.length; i++) {
+          const weight = parseFloat(weightInputs[i].value);
+          const reps = parseInt(repInputs[i].value);
+          sessionData[ex].push({ weight, reps });
+        }
+      });
+    
+      const sessio = JSON.parse(localStorage.getItem("aktiivinenSessio")) || {};
+      sessio.startTime = startTime;
+      sessio.totalPausedTime = totalPausedTime;
+      sessio.user = user;
+      sessio.program = program;
+      sessio.exercises = sessionData;
+    
+      localStorage.setItem("aktiivinenSessio", JSON.stringify(sessio));
+    }
+
+    
 
     function loadHistory() {
       const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
@@ -317,6 +345,40 @@
       return `${h}:${m}:${s}`;
     }
 
+
+    function continueWorkout() {
+      const sessio = JSON.parse(localStorage.getItem("aktiivinenSessio"));
+      if (!sessio) return;
+    
+      startTime = sessio.startTime;
+      totalPausedTime = sessio.totalPausedTime || 0;
+    
+      document.getElementById('user').value = sessio.user;
+      loadPrograms();
+    
+      setTimeout(() => {
+        document.getElementById('program').value = sessio.program;
+        showExercises(() => {
+          // Täytetään painot ja toistot jos dataa löytyy
+          if (sessio.exercises) {
+            for (const ex in sessio.exercises) {
+              const sets = sessio.exercises[ex];
+              const weightInputs = document.getElementsByName(`${ex}-weight`);
+              const repInputs = document.getElementsByName(`${ex}-reps`);
+              for (let i = 0; i < sets.length; i++) {
+                if (weightInputs[i]) weightInputs[i].value = sets[i].weight ?? '';
+                if (repInputs[i]) repInputs[i].value = sets[i].reps ?? '';
+              }
+            }
+          }
+        });
+      }, 100);
+    
+      showSection('exercise-section');
+      startTimer();
+    }
+
+    
     function startTimer() {
       const timer = document.getElementById('timer');
       timer.classList.remove('hidden');
@@ -367,22 +429,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sessio = JSON.parse(localStorage.getItem("aktiivinenSessio"));
       if (sessio) {
-        startTime = sessio.startTime;
-        totalPausedTime = sessio.totalPausedTime || 0;
-    
-        document.getElementById('user').value = sessio.user;
-        loadPrograms();
-    
-        setTimeout(() => {
-          document.getElementById('program').value = sessio.program;
-          showExercises(); // luo liikkeet
-        }, 100);
-    
-        showSection('exercise-section');
-        startTimer();
-        return;
+        // Jos löytyy kesken oleva treeni, näytä "Jatka treeniä" -nappi
+        document.getElementById('continue-btn')?.classList.remove('hidden');
       }
-    
       loadHistory();
     });
 
