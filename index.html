@@ -18,7 +18,7 @@
 </head>
 <body>
     <div id="main-menu">
-      <h1>Teit hyvin, kun tulit treenille, ystävä. Elä tee niin paljon kun on mahdollista, vaan niin vähän kun on tarpeen.</h1>
+      <h1>Teit hyvin, kun tulit treenille ystävä. Elä tee niin paljon kun on mahdollista, vaan niin vähän kun on tarpeen.</h1>
       <label for="user">Valitse käyttäjä:</label>
       <select id="user">
         <option value="">-- Valitse --</option>
@@ -67,8 +67,7 @@
   </div>
 
   <div id="final-message" class="hidden">
-    <h2>Hienoa työtä.</h2>
-    <p> On suurta viisautta olla tahtomatta sitä, mitä ilman voi jäädä... </p>
+    <h2>On suurta viisautta olla tahtomatta sitä, mitä ilman voi jäädä...</h2>
     <button onclick="showSection('main-menu')">Palaa alkuvalikkoon</button>
   </div>
 
@@ -136,8 +135,10 @@
       document.getElementById('save-btn')?.classList.add('hidden');
       document.getElementById('stop-btn')?.classList.add('hidden');
       localStorage.setItem("aktiivinenSessio", JSON.stringify({
-        startTime: startTime,
-        totalPausedTime: totalPausedTime || 0
+      startTime: startTime,
+        totalPausedTime: totalPausedTime || 0,
+        user: document.getElementById('user').value,
+        program: document.getElementById('program').value
       }));
     }
 
@@ -202,17 +203,6 @@
         container.appendChild(div);
       });
     }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      const sessio = JSON.parse(localStorage.getItem("aktiivinenSessio"));
-      if (sessio) {
-        startTime = sessio.startTime;
-        totalPausedTime = sessio.totalPausedTime || 0;
-        showSection('exercise-section');
-        startTimer();
-      }
-      loadHistory(); // säilytä myös historiatoiminnot
-    });
 
     
     function addSet(ex) {
@@ -283,7 +273,9 @@
         pausedAt = null;
         localStorage.setItem("aktiivinenSessio", JSON.stringify({
           startTime: startTime,
-          totalPausedTime: totalPausedTime || 0
+          totalPausedTime: totalPausedTime || 0,
+          user: document.getElementById('user').value,
+          program: document.getElementById('program').value
         }));
       }
       document.getElementById('pause-screen').classList.add('hidden');
@@ -362,6 +354,28 @@
       document.getElementById('final-message').classList.remove('hidden');
       localStorage.removeItem("aktiivinenSessio");
     }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sessio = JSON.parse(localStorage.getItem("aktiivinenSessio"));
+      if (sessio) {
+        startTime = sessio.startTime;
+        totalPausedTime = sessio.totalPausedTime || 0;
+    
+        document.getElementById('user').value = sessio.user;
+        loadPrograms(); // täyttää ohjelmavalinnat
+    
+        setTimeout(() => {
+          document.getElementById('program').value = sessio.program;
+          showExercises(); // luo liikkeet näkymään
+        }, 100);
+    
+        showSection('exercise-section');
+        startTimer();
+      }
+    
+      loadHistory(); // jos sinulla on historiatoimintoja
+    });
     
   </script>
 </body>
