@@ -12,6 +12,8 @@
     .hidden { display: none; }
     .hint { color: #aaa; font-size: 0.9em; }
     #timer { font-weight: bold; font-size: 1.2em; margin: 10px 0; }
+    .set-row { margin-bottom: 10px; border-left: 2px solid #ddd; padding-left: 10px; }
+    .add-set-btn { margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -92,18 +94,39 @@
 
       exercises.forEach(ex => {
         const div = document.createElement('div');
-        div.innerHTML = `
-          <h4>${ex}</h4>
-          <label>Paino (kg): <input type="number" id="${ex}-weight"></label>
-          <label>Toistot: <input type="number" id="${ex}-reps"></label>
-          <label>Sarjat: <input type="number" id="${ex}-sets"></label>
-          <div class="hint">Viimeksi: ${getLastEntry(data, lastDate, ex)}</div>
-        `;
+        div.innerHTML = `<h4>${ex}</h4>
+          <div id="${ex}-sets">
+            ${generateSetInputs(ex, 3)}
+          </div>
+          <button class="add-set-btn" onclick="addSet('${ex}')">Lisää sarja</button>
+          <div class="hint">Viimeksi: ${getLastEntry(data, lastDate, ex)}</div>`;
         container.appendChild(div);
       });
 
       document.getElementById('exercise-section').classList.remove('hidden');
       startTimer();
+    }
+
+    function generateSetInputs(ex, count) {
+      let html = '';
+      for (let i = 0; i < count; i++) {
+        html += `<div class="set-row">
+          <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
+          <label>Toistot: <input type="number" name="${ex}-reps"></label>
+        </div>`;
+      }
+      return html;
+    }
+
+    function addSet(ex) {
+      const container = document.getElementById(`${ex}-sets`);
+      const div = document.createElement('div');
+      div.className = 'set-row';
+      div.innerHTML = `
+        <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
+        <label>Toistot: <input type="number" name="${ex}-reps"></label>
+      `;
+      container.appendChild(div);
     }
 
     function getLastEntry(data, date, exercise) {
@@ -121,12 +144,15 @@
       if (!data[date]) data[date] = {};
 
       exercises.forEach(ex => {
-        const weight = parseFloat(document.getElementById(`${ex}-weight`).value);
-        const reps = parseInt(document.getElementById(`${ex}-reps`).value);
-        const sets = parseInt(document.getElementById(`${ex}-sets`).value);
+        const weightInputs = document.getElementsByName(`${ex}-weight`);
+        const repInputs = document.getElementsByName(`${ex}-reps`);
         if (!data[date][ex]) data[date][ex] = [];
-        for (let i = 0; i < sets; i++) {
-          data[date][ex].push({ weight, reps, rir: null });
+        for (let i = 0; i < weightInputs.length; i++) {
+          const weight = parseFloat(weightInputs[i].value);
+          const reps = parseInt(repInputs[i].value);
+          if (!isNaN(weight) && !isNaN(reps)) {
+            data[date][ex].push({ weight, reps, rir: null });
+          }
         }
       });
 
