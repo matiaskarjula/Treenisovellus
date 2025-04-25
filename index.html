@@ -38,9 +38,10 @@
 
   <div id="pause-screen" class="hidden">
     <h2>Treeni keskeytetty</h2>
-    <p>Treenin kesto: <span id="paused-duration">00:00:00</span></p>
+    <p><strong>Treenin aloituksesta:</strong> <span id="total-duration">00:00:00</span></p>
     <button onclick="resumeWorkout()">Jatka treeniä</button>
     <button onclick="confirmEndWorkout()">Lopeta treeni</button>
+    <p><strong>Treenin kesto:</strong> <span id="paused-duration">00:00:00</span></p>
   </div>
 
   <div id="short-workout-choice" class="hidden">
@@ -295,11 +296,22 @@
     }
 
     function updatePausedTime() {
-      const elapsed = Date.now() - startTime;
-      const h = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
-      const m = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
-      const s = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      document.getElementById('paused-duration').textContent = `${h}:${m}:${s}`;
+      const now = Date.now();
+      const total = now - startTime;
+      const active = total - totalPausedTime;
+    
+      const totalStr = formatTime(total);
+      const activeStr = formatTime(active);
+    
+      document.getElementById('total-duration').textContent = totalStr;
+      document.getElementById('paused-duration').textContent = activeStr;
+    }
+
+    function formatTime(ms) {
+      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+      return `${h}:${m}:${s}`;
     }
 
     function startTimer() {
