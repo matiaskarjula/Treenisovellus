@@ -18,7 +18,7 @@
 </head>
 <body>
     <div id="main-menu">
-      <h1>Teit hyvin, kun tulit treenille ystävänsä.</h1>
+      <h1>Teit hyvin, kun tulit treenille, ystävä. Elä tee niin paljon kun on mahdollista, vaan niin vähän kun on tarpeen.</h1>
       <label for="user">Valitse käyttäjä:</label>
       <select id="user">
         <option value="">-- Valitse --</option>
@@ -60,14 +60,15 @@
   <div id="exercise-section" class="hidden">
     <h2>Liikkeet</h2>
     <div id="exercise-entries"></div>
-    <button onclick="saveWorkout()">Tallenna treeni</button>
-    <button onclick="stopWorkout()">Lopeta treeni</button>
+    <button id="save-btn" class="hidden" onclick="saveWorkout()">Tallenna treeni</button>
+    <button id="stop-btn" class="hidden" onclick="stopWorkout()">Lopeta treeni</button>
     <button onclick="pauseWorkout()">Keskeytä treeni</button>
   </div>
 
   <div id="final-message" class="hidden">
     <h2>Hienoa työtä.</h2>
-    <p>"Se, joka liikuttaa vuorta, aloittaa kantamalla pois pieniä kiviä." – Kungfutse</p>
+    <p> On suurta viisautta olla tahtomatta sitä, mitä ilman voi jäädä... </p>
+    <button onclick="showSection('main-menu')">Palaa alkuvalikkoon</button>
   </div>
 
   <script>
@@ -252,12 +253,16 @@
       clearInterval(timerInterval);
       document.getElementById('exercise-section').classList.add('hidden');
       document.getElementById('pause-screen').classList.remove('hidden');
+      document.getElementById('save-btn')?.classList.remove('hidden');
+      document.getElementById('stop-btn')?.classList.remove('hidden');
       updatePausedTime();
     }
 
     function resumeWorkout() {
       document.getElementById('pause-screen').classList.add('hidden');
       document.getElementById('exercise-section').classList.remove('hidden');
+      document.getElementById('save-btn')?.classList.add('hidden');
+      document.getElementById('stop-btn')?.classList.add('hidden');
       startTimer();
     }
 
@@ -305,6 +310,7 @@
       clearInterval(timerInterval);
       document.getElementById('timer').classList.add('hidden');
       document.getElementById('exercise-section')?.classList.add('hidden');
+      document.getElementById('program-selection')?.classList.add('hidden');  // 🔹 tämä uusi
       document.getElementById('pause-screen')?.classList.add('hidden');
       document.getElementById('short-workout-choice')?.classList.add('hidden');
       document.getElementById('final-message').classList.remove('hidden');
