@@ -110,15 +110,17 @@
     function generateSetInputs(ex, count) {
       let html = '';
       for (let i = 0; i < count; i++) {
-        html += `<div class="set-row">
-          <strong>Sarja ${i + 1}</strong>
-          <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
-          <label>Toistot: <input type="number" name="${ex}-reps"></label>
-        </div>`;
+        html += `
+          <div class="set-row">
+            <strong>Sarja ${i + 1}</strong>
+            <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
+            <label>Toistot: <input type="number" name="${ex}-reps"></label>
+            <button type="button" onclick="removeSet(this)">Poista</button>
+          </div>`;
       }
       return html;
     }
-
+    
     function addSet(ex) {
       const container = document.getElementById(`${ex}-sets`);
       const setCount = container.querySelectorAll('.set-row').length;
@@ -128,9 +130,16 @@
         <strong>Sarja ${setCount + 1}</strong>
         <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
         <label>Toistot: <input type="number" name="${ex}-reps"></label>
-  `    ;
+        <button type="button" onclick="removeSet(this)">Poista</button>
+      `;
       container.appendChild(div);
     }
+
+    function removeSet(button) {
+      const row = button.parentElement;
+      row.remove();
+    }
+    
 
     function getLastEntry(data, date, exercise) {
       if (!date || !data[date][exercise]) return '–';
