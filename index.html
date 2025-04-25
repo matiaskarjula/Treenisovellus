@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fi">
 <head>
@@ -10,152 +9,151 @@
     body { font-family: sans-serif; margin: 20px; }
     label, input, select, button { margin: 5px 0; display: block; }
     canvas { max-width: 100%; height: auto; }
+    .hidden { display: none; }
+    .hint { color: #aaa; font-size: 0.9em; }
+    #timer { font-weight: bold; font-size: 1.2em; margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h1>Treeniseuranta</h1>
+  <h1>Teit hyvin, kun tulit treenille ystävä.</h1>
 
-  <label for="date">Päivämäärä:</label>
-  <input type="date" id="date">
+  <label for="user">Valitse käyttäjä:</label>
+  <select id="user" onchange="loadPrograms()">
+    <option value="">-- Valitse --</option>
+    <option value="Matias">Matias</option>
+    <option value="Eeva">Eeva</option>
+  </select>
 
-  <label for="exercise">Liike:</label>
-  <input type="text" id="exercise" placeholder="esim. penkki">
+  <div id="program-section" class="hidden">
+    <label for="program">Valitse treeni:</label>
+    <select id="program" onchange="showExercises()">
+      <option value="">-- Valitse --</option>
+    </select>
+  </div>
 
-  <label for="weight">Paino (kg):</label>
-  <input type="number" id="weight">
+  <div id="timer" class="hidden">Treenin kesto: <span id="elapsed">00:00:00</span></div>
 
-  <label for="reps">Toistot:</label>
-  <input type="number" id="reps">
+  <div id="exercise-section" class="hidden">
+    <h2>Liikkeet</h2>
+    <div id="exercise-entries"></div>
+    <button onclick="saveWorkout()">Tallenna treeni</button>
+    <button onclick="stopWorkout()">Lopeta treeni</button>
+  </div>
 
-  <label for="rir">RIR:</label>
-  <input type="number" id="rir">
-
-  <button onclick="saveEntry()">Tallenna</button>
-
-  <label for="chartExercise">Valitse liike käyrään:</label>
-  <select id="chartExercise"></select>
-  <button onclick="drawChart()">Piirrä kehityskäyrä</button>
-
-  <canvas id="chartCanvas"></canvas>
-
-<h2>Oletustreeniohjelma</h2>
-<p>Suositeltu 4-jakoinen ohjelma (hypertrofia + voima):</p>
-<pre>
-Työntävät (penkkifokus):
-- Penkkipunnerrus tangolla         4x6
-- Vinopenkki käsipainoilla         3x8–10
-- Pystypunnerrus käsipainoilla     3x8
-- Dippi (lisäpainolla)             3x8
-- Ranskalainen punnerrus           3x10
-- Sivuviparit taljassa             3x12–15
-
-Vetävät (hauisfokus):
-- Leuanveto / Ylätalja             3x8
-- Alatalja                         3x8–10
-- Suorinjaloin mave                3x8
-- Takaolkapäät taljassa            3x12
-- Hauiskääntö tangolla             3x8
-- Hauiskääntö taljassa             3x10
-
-Jalat (kyykkypainotus):
-- Takakyykky                       4x6
-- Etureisilaite                    3x10
-- Takareidet laitteessa           3x10
-- Pohkeet smithissä               3x12
-- Vatsalihaskone                  3x15
-
-Olkapäät + Kädet (täsmäpäivä):
-- Pystypunnerrus laitteessa       3x10
-- Sivuviparit käsipainoilla        3x15
-- Etuviparit levypainolla          2x15
-- Ojentajapunnerrus taljassa       3x12
-- Hauiskääntö ristitaljassa        3x12
-- Dippi kehonpainolla              3x failure
-</pre>
-
+  <div id="final-message" class="hidden">
+    <h2>Hienoa työtä.</h2>
+    <p>"Se, joka liikuttaa vuorta, aloittaa kantamalla pois pieniä kiviä." – Kungfutse</p>
+  </div>
 
   <script>
-    function saveEntry() {
-      const date = document.getElementById('date').value;
-      const exercise = document.getElementById('exercise').value.toLowerCase();
-      const weight = parseFloat(document.getElementById('weight').value);
-      const reps = parseInt(document.getElementById('reps').value);
-      const rir = parseInt(document.getElementById('rir').value);
-      if (!date || !exercise || isNaN(weight) || isNaN(reps)) return;
+    let startTime = null;
+    let timerInterval = null;
 
-      const entry = { weight, reps, rir };
+    const programs = {
+      Matias: {
+        "Jalkapäivä": ["kyykky", "jalkaprässi", "takareidet"],
+        "Vetopäivä": ["mave", "leuanveto", "hauiskääntö"],
+        "Työntöpäivä": ["penkki", "pystypunnerrus", "ojentajat"],
+        "Käsipäivä": ["hauiskääntö", "ojentajat", "vipunostot"]
+      },
+      Eeva: {
+        "Jalkapäivä": ["kyykky", "askelkyykky", "pohkeet"],
+        "Vetopäivä": ["ylätalja", "kulmasoutu", "hauiskääntö"],
+        "Työntöpäivä": ["penkki", "rintaprässi", "ojentajat"],
+        "Käsipäivä": ["hauiskääntö", "ojentajat", "sivuviparit"]
+      }
+    };
+
+    function loadPrograms() {
+      const user = document.getElementById('user').value;
+      const programSelect = document.getElementById('program');
+      const section = document.getElementById('program-section');
+      programSelect.innerHTML = '<option value="">-- Valitse --</option>';
+      if (programs[user]) {
+        for (const key in programs[user]) {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = key;
+          programSelect.appendChild(option);
+        }
+        section.classList.remove('hidden');
+      }
+    }
+
+    function showExercises() {
+      const user = document.getElementById('user').value;
+      const program = document.getElementById('program').value;
+      const exercises = programs[user][program];
+      const container = document.getElementById('exercise-entries');
+      container.innerHTML = '';
+
+      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
+      const lastDate = Object.keys(data).sort().reverse().find(d => data[d]);
+
+      exercises.forEach(ex => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <h4>${ex}</h4>
+          <label>Paino (kg): <input type="number" id="${ex}-weight"></label>
+          <label>Toistot: <input type="number" id="${ex}-reps"></label>
+          <label>Sarjat: <input type="number" id="${ex}-sets"></label>
+          <div class="hint">Viimeksi: ${getLastEntry(data, lastDate, ex)}</div>
+        `;
+        container.appendChild(div);
+      });
+
+      document.getElementById('exercise-section').classList.remove('hidden');
+      startTimer();
+    }
+
+    function getLastEntry(data, date, exercise) {
+      if (!date || !data[date][exercise]) return '–';
+      const sets = data[date][exercise].map(e => `${e.weight}kg × ${e.reps}`).join(', ');
+      return `${date}: ${sets}`;
+    }
+
+    function saveWorkout() {
+      const date = new Date().toISOString().split('T')[0];
+      const user = document.getElementById('user').value;
+      const program = document.getElementById('program').value;
+      const exercises = programs[user][program];
       const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
       if (!data[date]) data[date] = {};
-      if (!data[date][exercise]) data[date][exercise] = [];
-      data[date][exercise].push(entry);
-      localStorage.setItem('treenidata', JSON.stringify(data));
 
-      updateDropdown();
-      alert('Tallennettu!');
-    }
-
-    function updateDropdown() {
-      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
-      const exerciseSet = new Set();
-      for (const date in data) {
-        for (const ex in data[date]) {
-          exerciseSet.add(ex);
-        }
-      }
-      const select = document.getElementById('chartExercise');
-      select.innerHTML = '';
-      for (const ex of exerciseSet) {
-        const option = document.createElement('option');
-        option.value = ex;
-        option.textContent = ex;
-        select.appendChild(option);
-      }
-    }
-
-    function drawChart() {
-      const selected = document.getElementById('chartExercise').value;
-      const data = JSON.parse(localStorage.getItem('treenidata') || '{}');
-      const dates = [], values = [];
-
-      const dateKeys = Object.keys(data).sort();
-      for (const date of dateKeys) {
-        if (data[date][selected]) {
-          const entries = data[date][selected];
-          const volume = entries.reduce((sum, e) => sum + e.weight * e.reps, 0);
-          let oneRM = Math.max(...entries.map(e => e.weight * (1 + e.reps / 30)));
-          if (selected === "penkki" || selected === "kyykky") {
-            values.push({ label: date, value: oneRM });
-          } else {
-            values.push({ label: date, value: volume });
-          }
-          dates.push(date);
-        }
-      }
-
-      const ctx = document.getElementById('chartCanvas').getContext('2d');
-      if (window.myChart) window.myChart.destroy();
-      window.myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: values.map(v => v.label),
-          datasets: [{
-            label: selected + (selected === "penkki" || selected === "kyykky" ? ' (1RM)' : ' (volyymi)'),
-            data: values.map(v => v.value),
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: false
-            }
-          }
+      exercises.forEach(ex => {
+        const weight = parseFloat(document.getElementById(`${ex}-weight`).value);
+        const reps = parseInt(document.getElementById(`${ex}-reps`).value);
+        const sets = parseInt(document.getElementById(`${ex}-sets`).value);
+        if (!data[date][ex]) data[date][ex] = [];
+        for (let i = 0; i < sets; i++) {
+          data[date][ex].push({ weight, reps, rir: null });
         }
       });
+
+      localStorage.setItem('treenidata', JSON.stringify(data));
+      alert('Treenit tallennettu!');
     }
 
-    updateDropdown();
+    function startTimer() {
+      const timer = document.getElementById('timer');
+      timer.classList.remove('hidden');
+      const display = document.getElementById('elapsed');
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const hours = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
+        const minutes = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
+        const seconds = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+        display.textContent = `${hours}:${minutes}:${seconds}`;
+      }, 1000);
+    }
+
+    function stopWorkout() {
+      clearInterval(timerInterval);
+      document.getElementById('timer').classList.add('hidden');
+      document.getElementById('exercise-section').classList.add('hidden');
+      document.getElementById('final-message').classList.remove('hidden');
+    }
   </script>
 </body>
 </html>
