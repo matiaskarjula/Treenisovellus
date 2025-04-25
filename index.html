@@ -74,6 +74,9 @@
   <script>
     let startTime = null;
     let timerInterval = null;
+    let pausedAt = null;
+    let totalPausedTime = 0;
+
 
     const programs = {
       Matias: {
@@ -251,14 +254,19 @@
 
     function pauseWorkout() {
       clearInterval(timerInterval);
+      pausedAt = Date.now();
       document.getElementById('exercise-section').classList.add('hidden');
       document.getElementById('pause-screen').classList.remove('hidden');
+      updatePausedTime();
       document.getElementById('save-btn')?.classList.remove('hidden');
       document.getElementById('stop-btn')?.classList.remove('hidden');
-      updatePausedTime();
     }
 
     function resumeWorkout() {
+      if (pausedAt) {
+        totalPausedTime += Date.now() - pausedAt;
+        pausedAt = null;
+      }
       document.getElementById('pause-screen').classList.add('hidden');
       document.getElementById('exercise-section').classList.remove('hidden');
       document.getElementById('save-btn')?.classList.add('hidden');
@@ -296,15 +304,18 @@
       const timer = document.getElementById('timer');
       timer.classList.remove('hidden');
       const display = document.getElementById('elapsed');
-      startTime = Date.now();
+      if (!startTime) startTime = Date.now(); // asetetaan vain kerran
+    
       timerInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
+        const now = Date.now();
+        const elapsed = now - startTime - totalPausedTime;
         const hours = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
         const minutes = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
         const seconds = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
         display.textContent = `${hours}:${minutes}:${seconds}`;
       }, 1000);
     }
+
 
     function stopWorkout() {
       clearInterval(timerInterval);
