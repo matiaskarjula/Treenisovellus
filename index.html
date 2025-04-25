@@ -111,6 +111,7 @@
       let html = '';
       for (let i = 0; i < count; i++) {
         html += `<div class="set-row">
+          <strong>Sarja ${i + 1}</strong>
           <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
           <label>Toistot: <input type="number" name="${ex}-reps"></label>
         </div>`;
@@ -120,12 +121,14 @@
 
     function addSet(ex) {
       const container = document.getElementById(`${ex}-sets`);
+      const setCount = container.querySelectorAll('.set-row').length;
       const div = document.createElement('div');
       div.className = 'set-row';
       div.innerHTML = `
+        <strong>Sarja ${setCount + 1}</strong>
         <label>Paino (kg): <input type="number" name="${ex}-weight"></label>
         <label>Toistot: <input type="number" name="${ex}-reps"></label>
-      `;
+  `    ;
       container.appendChild(div);
     }
 
