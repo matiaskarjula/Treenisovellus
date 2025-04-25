@@ -134,12 +134,6 @@
       startTimer();
       document.getElementById('save-btn')?.classList.add('hidden');
       document.getElementById('stop-btn')?.classList.add('hidden');
-      localStorage.setItem("aktiivinenSessio", JSON.stringify({
-      startTime: startTime,
-        totalPausedTime: totalPausedTime || 0,
-        user: document.getElementById('user').value,
-        program: document.getElementById('program').value
-      }));
     }
 
     function generateSetInputs(ex, count) {
@@ -327,17 +321,31 @@
       const timer = document.getElementById('timer');
       timer.classList.remove('hidden');
       const display = document.getElementById('elapsed');
-      if (!startTime) startTime = Date.now(); // asetetaan vain kerran
     
+      // ⏱️ Asetetaan startTime vain jos sitä ei vielä ole
+      if (!startTime) {
+        startTime = Date.now();
+    
+        // 💾 Tallennetaan sessio kun aika alkaa
+        localStorage.setItem("aktiivinenSessio", JSON.stringify({
+          startTime: startTime,
+          totalPausedTime: totalPausedTime || 0,
+          user: document.getElementById('user').value,
+          program: document.getElementById('program').value
+        }));
+      }
+    
+      // ⌛ Näytetään kuluva aika
       timerInterval = setInterval(() => {
         const now = Date.now();
         const elapsed = now - startTime - totalPausedTime;
-        const hours = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
-        const minutes = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
-        const seconds = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-        display.textContent = `${hours}:${minutes}:${seconds}`;
+        const h = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
+        const m = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
+        const s = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+        display.textContent = `${h}:${m}:${s}`;
       }, 1000);
     }
+
 
     function stopWorkout() {
       clearInterval(timerInterval);
@@ -363,19 +371,21 @@
         totalPausedTime = sessio.totalPausedTime || 0;
     
         document.getElementById('user').value = sessio.user;
-        loadPrograms(); // täyttää ohjelmavalinnat
+        loadPrograms();
     
         setTimeout(() => {
           document.getElementById('program').value = sessio.program;
-          showExercises(); // luo liikkeet näkymään
+          showExercises(); // luo liikkeet
         }, 100);
     
         showSection('exercise-section');
         startTimer();
+        return;
       }
     
-      loadHistory(); // jos sinulla on historiatoimintoja
+      loadHistory();
     });
+
     
   </script>
 </body>
